@@ -13,6 +13,8 @@ public:
 	enum input_mode_t {input_tabdelimited};
 
 	Alignment(char strand_, int length_, std::string chromosome_, long start_, std::vector<std::pair<int, char> > edits_);
+	Alignment();
+
 
 	inline char getStrand() {
 		return strand;
