@@ -39,11 +39,7 @@ bool AlignmentReader::next(Alignment &a) {
 
 			vector<pair<int,char> > edits;
 
-
-			if(alignment_parts.at(6) == "")
-				edits.push_back(make_pair(-1, 'X'));
-
-			else {
+			if(alignment_parts.at(6) != "") {
 
 				vector<string> alignment_edits = split(alignment_parts.at(6).c_str(), ' ');
 
