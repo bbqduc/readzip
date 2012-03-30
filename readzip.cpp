@@ -1,11 +1,10 @@
-#include "Alignment.h"
+#include <getopt.h>
+#include <map>
 #include "AlignmentReader.h"
 #include "MethodA.h"
 #include "MethodB.h"
 #include "MethodC.h"
 #include "MethodD.h"
-
-#include <getopt.h>
 
 enum packing_mode_t {packing_mode_a, packing_mode_b, packing_mode_c, packing_mode_d };
 enum pack_unpack_mode_t {zip_mode, unzip_mode };
@@ -43,11 +42,15 @@ int main(int argc, char **argv)
 
 
 	// Parse filenames
-	if (argc - optind == 0)
+	if (argc - optind < 2)
 	{
 		cerr << "readzip: missing input files!" << endl;
 		return 1;
 	}
+
+	string genome_file = ""; 
+
+	string output_file = string(argv[optind++]);
 
 	string first_file = string(argv[optind++]);
 	string second_file;
@@ -63,7 +66,64 @@ int main(int argc, char **argv)
 	}
 
 
-	// TODO Calling each mode (fill up as modes are implemented)
+	// Call to the readaligner?
 
+
+	// TODO Calling each mode (fill up as modes are implemented)
+	switch(mode) {
+
+		case packing_mode_a:
+
+			if(xc_mode == zip_mode) {
+
+				if(MethodA::compress_A(first_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+
+			}
+			else {
+
+				if(MethodA::decompress_A(first_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+			}
+			break;
+
+		case packing_mode_b:
+
+			if(xc_mode == zip_mode) {
+
+			}
+			else {
+
+			}
+			break;
+
+		case packing_mode_c:
+
+			if(xc_mode == zip_mode) {
+
+			}
+			else {
+
+			}
+			break;
+
+
+		case packing_mode_d:
+
+			if(xc_mode == zip_mode) {
+
+			}
+			else {
+
+			}
+			break;
+
+	}
 
 }
