@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	string genome_file = ""; 
+	string genome_file = string(argv[optind++]); 
 
 	string output_file = string(argv[optind++]);
 
@@ -86,10 +86,10 @@ int main(int argc, char **argv)
 			else {
 
 				if(MethodA::decompress_A(first_file, output_file, genome_file)) {
-					std::cerr << "Done compressing." << std::endl;
+					std::cerr << "Done decompressing." << std::endl;
 				}
 				else
-					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+					std::cerr << "Error! Something went wrong with the decompression!" << std::endl;
 			}
 			break;
 
