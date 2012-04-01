@@ -1,7 +1,6 @@
 #include "MethodA.h"
 #include "Alignment.h"
 #include "AlignmentReader.h"
-#include "intCodingLib/src/intCodingLib.h"
 #include "bitfile.h"
 
 #include <map>

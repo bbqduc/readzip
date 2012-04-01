@@ -16,23 +16,23 @@ public:
 	Alignment();
 
 
-	inline char getStrand() {
+	inline char getStrand() const{
 		return strand;
 	}
 
-	inline int getLength() {
+	inline int getLength() const{
 		return length;
 	}
 
-	inline std::string getChromosome() {
+	inline std::string getChromosome() const{
 		return chromosome;
 	}
 
-	inline long getStart() {
+	inline long getStart() const{
 		return start;
 	}
 
-	inline std::vector<std::pair<int, char> > getEdits() {
+	inline const std::vector<std::pair<int, char> >& getEdits() const{
 		return edits;
 	}
 
