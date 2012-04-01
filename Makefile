@@ -1,7 +1,7 @@
 CC = g++
 
 
-OBJS = MethodA.o MethodB.o MethodC.o MethodD.o Alignment.o AlignmentReader.o
+OBJS = MethodA.o MethodB.o MethodC.o MethodD.o Alignment.o AlignmentReader.o bitfile.o
 
 all: readzip
 
