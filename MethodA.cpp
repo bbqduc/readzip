@@ -2,6 +2,7 @@
 #include "Alignment.h"
 #include "AlignmentReader.h"
 #include "bitfile.h"
+#include "utils.h"
 
 #include <map>
 #include <cmath>
@@ -125,75 +126,8 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 			return false;
 		}
 
-		// Output code for start position (gamma code)
-		// ( log2(x) = log(x)/log(2) )
-		long start = a.getStart(); 
-		unsigned start_length = (unsigned)floor(log(start+1)/log(2));		
-
-		value = 1;
-
-		// The preceeding 1s
-		for(int i = 0; i < start_length; i++) {
-
-			if(out.PutBit(value) == EOF) {
-				cerr << "Error: writing start!" << endl;
-				out.Close();
-				return false;
-			}
-		}
-
-		// The delimiting 0
-		value = 0;
-		if(out.PutBit(value) == EOF) {
-			cerr << "Error: writing start!" << endl;
-			out.Close();
-			return false;
-		}
-
-		// The integer itself using log2(n) bits
-		start = start - pow(2, start_length) + 1;
-
-		if(out.PutBitsInt(&start, start_length, sizeof(long)) == EOF)
-		{
-			cerr << "Error: writing start!" << endl;
-			out.Close();
-			return false;
-		}
-		
-
-		// Output code for length (gamma code)
-		int length = a.getLength(); 
-		unsigned length_length = (unsigned)floor(log(length+1)/log(2));
-
-		value = 1;
-
-		// The preceeding 1s
-		for(int i = 0; i < length_length; i++) {
-
-			if(out.PutBit(value) == EOF) {
-				cerr << "Error: writing length!" << endl;
-				out.Close();
-				return false;
-			}
-		}
-
-		// The delimiting 0
-		value = 0;
-		if(out.PutBit(value) == EOF) {
-			cerr << "Error: writing length!" << endl;
-			out.Close();
-			return false;
-		}
-		length = length - pow(2, length_length) + 1;
-
-		// The integer itself using log2(n) bits
-		if(out.PutBitsInt(&length, length_length, sizeof(int)) == EOF)
-		{
-			cerr << "Error: writing length." << endl;
-			out.Close();
-			return false;
-		}
-
+		writeGammaCode(out, a.getStart());
+		writeGammaCode(out, a.getLength());
 		// Output codes for the edits (position with gamma code and the edits with fixed length)
 
 		out.ByteAlign();
@@ -299,56 +233,8 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 
 		}
 
-		long start = 0;
-
-		// Reading the length of gamma code
-		unsigned count = 0;
-
-		while((i = in.GetBit()) == 1) {
-			count++;
-		}
-
-		if(i == EOF) {
-			cerr << "Failure to decompress start position (EOF)." << endl;
-			in.Close();
-			return false;
-		}
-
-		if(in.GetBitsInt(&start, count, sizeof(long)) == EOF) {
-			cerr << "Failure to decompress start position (not enough bits)." << endl;
-			in.Close();
-			return false;
-		}
-
-		start = start + pow(2,count) - 1;
-
-
-		int length = 0;
-
-		// Reading the length of gamma code
-		count = 0;
-
-		while((i = in.GetBit()) == 1) {
-			count++;
-		}
-
-		if(i == EOF) {
-			cerr << "Failure to decompress length (EOF)." << endl;
-			in.Close();
-			return false;
-		}
-
-		if(in.GetBitsInt(&length, count, sizeof(int)) == EOF) {
-			cerr << "Failure to decompress length (not enough bits)." << endl;
-			in.Close();
-			return false;
-		}
-
-		length = length + pow(2,count) - 1;
-
-
-
-
+		long start = readGammaCode(in);
+		long length = readGammaCode(in);
 
 		vector<pair<int, char> > edits;
 
