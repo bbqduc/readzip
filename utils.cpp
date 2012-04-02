@@ -20,9 +20,20 @@ void readAllAlignments(std::vector<Alignment>& alignments, const std::string& in
 
 void writeGammaCode(bit_file_c& out, long value)
 {
+
 	assert(out.good());
 
-	unsigned length = (unsigned)floor(log2(value+1));		
+	if(value == 0) {
+		if(out.PutBit(value) == EOF) {
+			std::cerr << "Error writing gamma code." << std::endl;
+			out.Close();
+			exit(-1);
+		}
+		return;
+	}
+
+	unsigned length = (unsigned)floor(log2(value+1));
+
 	// The preceeding 1s
 	int temp = 1;
 	for(int i = 0; i < length; i++) {
@@ -64,6 +75,9 @@ long readGammaCode(bit_file_c& in)
 	while((i = in.GetBit()) == 1) {
 		count++;
 	}
+
+	if(i == 0 && count == 0)
+		return 0;
 
 	if(i == EOF) {
 		std::cerr << "Error reading gamma code." << std::endl;
