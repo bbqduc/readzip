@@ -9,34 +9,6 @@
 
 using namespace std;
 
-// Creates codes for chromosomes from given genomefile
-// Note! Order matters, the file used to decompress must be the same genome file.
-map<string, char> code_chromosomes(string genomefile) {
-
-	ifstream in(genomefile.c_str());
-
-	if(!in.is_open()) {
-		cerr << "Failure to create the chromosome codes, file could not be opened." << endl;
-		abort();
-	}
-
-	string row;
-
-	vector<string> chromosome_names;
-
-	while(getline(in, row)) {
-		if(row.at(0) == '>')
-			chromosome_names.push_back(row.substr(1, row.find_first_of(' ')-1));
-	}
-
-	map<string, char> codes;
-
-	for(char i = 0; i < chromosome_names.size(); i++)
-		codes[chromosome_names.at(i)] = i;
-
-	return codes;
-}
-
 // Fixed length code (with 4 bits) can be used to display these
 enum edit_codes_t {mismatch_A, mismatch_C, mismatch_G, mismatch_T, insertion_A, insertion_C, insertion_G, insertion_T, deletion};
 
@@ -139,6 +111,8 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 				return false;
 			}
 
+			edits.clear();
+
 		}
 
 		// Sets the buffer to nearest byte (decompression doesn't always work correctly if this isn't done)
@@ -148,6 +122,7 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 
 	delete reader;
 	out.Close();
+	chromosome_codes.clear();
 
 	return true;
 
@@ -206,13 +181,16 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 
 	chromosomes[id] = info;
 
-	while(!in.eof()) {
+	while(true) {
 		// Get the values	
 		char chromosome_code;
 
 		// If this returns EOF, the file has been completely read, it's not an error.
 		if((chromosome_code = in.GetChar()) == EOF) {
+			out.close();
 			in.Close();
+			chromosome_codes.clear();
+			chromosomes.clear();
 			return true;
 		}
 
@@ -361,5 +339,7 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 		out << data << endl;
 
 		in.ByteAlign();
+
+		edits.clear();
 	}
 }

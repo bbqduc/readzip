@@ -20,7 +20,6 @@ void readAllAlignments(std::vector<Alignment>& alignments, const std::string& in
 
 void writeGammaCode(bit_file_c& out, long value)
 {
-
 	assert(out.good());
 
 	if(value == 0) {
@@ -32,8 +31,7 @@ void writeGammaCode(bit_file_c& out, long value)
 		return;
 	}
 
-	unsigned length = (unsigned)floor(log2(value+1));
-
+	unsigned length = (unsigned)floor(log2(value+1));		
 	// The preceeding 1s
 	int temp = 1;
 	for(int i = 0; i < length; i++) {
@@ -132,3 +130,33 @@ void complement(std::string &t)
         }
     }
 }
+
+
+// Creates codes for chromosomes from given genomefile
+// Note! Order matters, the file used to decompress must be the same genome file.
+std::map<std::string, char> code_chromosomes(std::string genomefile) {
+
+	ifstream in(genomefile.c_str());
+
+	if(!in.is_open()) {
+		std::cerr << "Failure to create the chromosome codes, file could not be opened." << std::endl;
+		abort();
+	}
+
+	std::string row;
+
+	std::vector<std::string> chromosome_names;
+
+	while(getline(in, row)) {
+		if(row.at(0) == '>')
+			chromosome_names.push_back(row.substr(1, row.find_first_of(' ')-1));
+	}
+
+	std::map<string, char> codes;
+
+	for(char i = 0; i < chromosome_names.size(); i++)
+		codes[chromosome_names.at(i)] = i;
+
+	return codes;
+}
+

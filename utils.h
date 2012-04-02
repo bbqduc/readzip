@@ -7,6 +7,7 @@
 #include "bitfile.h"
 #include <string>
 #include <vector>
+#include <map>
 #include "Alignment.h"
 
 /* Writes gamma code using bitfile. */
@@ -26,3 +27,6 @@ void complement(std::string &t);
 
 /* Reverses the sequences (source: readaligner).*/
 void revstr(std::string &t);
+
+/* Creates codes for the chromosomes in the given genome file. */
+std::map<std::string, char> code_chromosomes(std::string genomefile);
