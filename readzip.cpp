@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	string first_file = string(argv[optind++]);
 	string second_file;
 
-	if(mode == packing_mode_c | mode == packing_mode_d) {
+	if((xc_mode == zip_mode) && (mode == packing_mode_c | mode == packing_mode_d)) {
 		if (argc - optind == 0)
 		{
 			cerr << "readzip: missing input files!" << endl;
@@ -107,9 +107,23 @@ int main(int argc, char **argv)
 
 			if(xc_mode == zip_mode) {
 
+				if(MethodC::compress_C(first_file, second_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+
 			}
 			else {
 
+				string output_file_1 = output_file + "_1";
+				string output_file_2 = output_file + "_2";
+
+				if(MethodC::decompress_C(first_file, output_file_1, output_file_2, genome_file)) {
+					std::cerr << "Done decompressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the decompression!" << std::endl;
 			}
 			break;
 
