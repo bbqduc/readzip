@@ -27,7 +27,7 @@ void writeGammaCode(bit_file_c& out, long value)
 	int temp = 1;
 	for(int i = 0; i < length; i++) {
 		if(out.PutBit(temp) == EOF) {
-			std::cerr << "Error: writing start!" << std::endl;
+			std::cerr << "Error writing gamma code." << std::endl;
 			out.Close();
 			exit(-1);
 		}
@@ -36,7 +36,7 @@ void writeGammaCode(bit_file_c& out, long value)
 	// The delimiting 0
 	temp = 0;
 	if(out.PutBit(temp) == EOF) {
-		std::cerr << "Error: writing start!" << std::endl;
+		std::cerr << "Error writing gamme code." << std::endl;
 		out.Close();
 		exit(-1);
 	}
@@ -46,7 +46,7 @@ void writeGammaCode(bit_file_c& out, long value)
 
 	if(out.PutBitsInt(&value, length, sizeof(long)) == EOF)
 	{
-		std::cerr << "Error: writing start!" << std::endl;
+		std::cerr << "Error writing gamma code." << std::endl;
 		out.Close();
 		exit(-2);
 	}
@@ -66,12 +66,12 @@ long readGammaCode(bit_file_c& in)
 	}
 
 	if(i == EOF) {
-		std::cerr << "Failure to decompress value position (EOF)." << std::endl;
+		std::cerr << "Error reading gamma code." << std::endl;
 		in.Close();
 	}
 
 	if(in.GetBitsInt(&value, count, sizeof(long)) == EOF) {
-		std::cerr << "Failure to decompress value position (not enough bits)." << std::endl;
+		std::cerr << "Error reading gamma code." << std::endl;
 		in.Close();
 	}
 
