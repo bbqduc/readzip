@@ -29,4 +29,4 @@ void complement(std::string &t);
 void revstr(std::string &t);
 
 /* Creates codes for the chromosomes in the given genome file. */
-std::map<std::string, char> code_chromosomes(std::string genomefile);
+std::map<std::string, int> code_chromosomes(std::string genomefile);
