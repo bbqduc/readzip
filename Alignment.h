@@ -12,9 +12,12 @@ public:
 
 	enum input_mode_t {input_tabdelimited};
 
-	Alignment(char strand_, int length_, std::string chromosome_, long start_, std::vector<std::pair<int, char> > edits_);
+	Alignment(std::string name_, char strand_, int length_, std::string chromosome_, long start_, std::vector<std::pair<int, char> > edits_);
 	Alignment();
 
+	inline std::string getName() const{
+		return name;
+	}
 
 	inline char getStrand() const{
 		return strand;
@@ -41,6 +44,7 @@ public:
 
 protected:
 
+	std::string name;
 	char strand;
 	int length;
 	std::string chromosome;
