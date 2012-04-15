@@ -126,12 +126,16 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 
 			int size = edits.size();
 
+			int previous = 0;
+
 			// Number of edits first that know how many to read back
 			writeGammaCode(out, size);
 
 			for(int i = 0; i < size; i++) {
 
-				writeGammaCode(out, edits.at(i).first);
+				writeGammaCode(out, edits.at(i).first-previous);
+
+				previous = edits.at(i).first;
 
 				int edit_value = 0;
 
@@ -299,9 +303,12 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 				strand = 'F';
 				break;
 			case EOF:
-				cerr << "Failure to decompress strand." << endl;
+				out_1.close();
+				out_2.close();
 				in.Close();
-				return false;
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
 
 		}
 
@@ -361,11 +368,13 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 				return true;
 			}
 
+			int pos = 0;
 
 			// Read the edits
 			for(int i = 0; i < edits_size; i++) {
 
-				int pos = readGammaCode(in);
+				pos += readGammaCode(in);
+
 				int edit_number = 0;
 				char edit;
 

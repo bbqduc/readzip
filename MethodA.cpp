@@ -64,17 +64,21 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 		writeGammaCode(out, a.getStart());
 		writeGammaCode(out, a.getLength());
 
-		// Output codes for the edits (position with gamma code and the edits with fixed length)
+		// Output codes for the edits (relative position with gamma code and the edits with fixed length)
 		// Output of readaligner codes mismatches with ACGT and insertions with acgt
 		vector<pair<int,char> > edits = a.getEdits();
 		int size = edits.size();
+
+		int previous = 0;
 
 		// Number of edits first that know how many to read back
 		writeGammaCode(out, size);
 
 		for(int i = 0; i < size; i++) {
 
-			writeGammaCode(out, edits.at(i).first);
+			writeGammaCode(out, edits.at(i).first-previous);
+
+			previous = edits.at(i).first;
 
 			int edit_value = 0;
 
@@ -229,9 +233,11 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 				strand = 'F';
 				break;
 			case EOF:
-				cerr << "Failure to decompress strand." << endl;
+				out.close();
 				in.Close();
-				return false;
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
 
 		}
 
@@ -269,10 +275,13 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 			return true;
 		}
 
+		int pos = 0;
+
 		// Read the edits
 		for(int i = 0; i < edits_size; i++) {
 
-			int pos = readGammaCode(in);
+			pos += readGammaCode(in);
+
 			int edit_number = 0;
 			char edit;
 
@@ -315,6 +324,7 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 			}
 
 			edits.push_back(make_pair(pos, edit));
+
 		}
 
 		// Reconstruct the data
