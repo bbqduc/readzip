@@ -39,7 +39,7 @@ public:
 		return edits;
 	}
 
-	
+	std::string toString();
 
 
 protected:
