@@ -24,7 +24,7 @@ std::string Alignment::toString() {
 
 	if(edit.size() > 0) {
 
-		for(int i = 0; i < edit.size()-1; i++)
+		for(unsigned i = 0; i < edit.size()-1; i++)
 			sstm << edit.at(i).first << " " << edit.at(i).second << " ";
 
 		sstm << edit.at(edit.size()-1).first << " " << edit.at(edits.size()-1).second;

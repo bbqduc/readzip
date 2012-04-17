@@ -45,7 +45,7 @@ bool AlignmentReader::next(Alignment &a) {
 
 				vector<string> alignment_edits = split(alignment_parts.at(6).c_str(), ' ');
 
-				for(int i = 0; i < alignment_edits.size(); i = i+2) {
+				for(unsigned i = 0; i < alignment_edits.size(); i = i+2) {
 
 					edits.push_back(make_pair(atoi(alignment_edits.at(i).c_str()), alignment_edits.at(i+1).at(0)));
 

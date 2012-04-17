@@ -32,7 +32,7 @@ void writeGammaCode(bit_file_c& out, long value)
 
 	unsigned length = (unsigned)floor(log2(value+1));		
 	// The preceeding 1s
-	for(int i = 0; i < length; i++)
+	for(unsigned i = 0; i < length; i++)
 		out.PutBit(1);
 
 	// The delimiting 0
@@ -129,7 +129,7 @@ std::map<std::string, int> code_chromosomes(std::string genomefile) {
 
 	sort(chromosome_names.begin(), chromosome_names.end());
 
-	for(int i = 0; i < chromosome_names.size(); i++)
+	for(unsigned i = 0; i < chromosome_names.size(); i++)
 		codes[chromosome_names.at(i)] = i;
 
 	// Dummy for the "no alignment" cases
@@ -280,7 +280,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 		}
 
 		// Missing alignment
-		if(no_more_alignments | a.getName() != id) {
+		if(no_more_alignments | (a.getName() != id)) {
 
 			char strand = 'F';
 			string chromosome = "*";
@@ -290,14 +290,12 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 			std::vector<std::pair<int, char> > edit_vector;
 
 			char c = pattern.at(0);
-			tolower(c);
 
-			edit_vector.push_back(make_pair(0, c));
+			edit_vector.push_back(make_pair(0, tolower(c)));
 
-			for(int i = 1; i < pattern.length(); i++) {
+			for(unsigned i = 1; i < pattern.length(); i++) {
 				c = pattern.at(i);
-				tolower(c);
-				edit_vector.push_back(make_pair(1,c));
+				edit_vector.push_back(make_pair(1,tolower(c)));
 			}
 
 			Alignment new_a(id, strand, length, chromosome, start, edit_vector);
@@ -382,7 +380,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 		}
 
 		// Missing alignment
-		if(no_more_alignments | a.getName() != id) {
+		if(no_more_alignments | (a.getName() != id)) {
 
 			char strand = 'F';
 			string chromosome = "*";
@@ -392,14 +390,12 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 			std::vector<std::pair<int, char> > edit_vector;
 
 			char c = pattern.at(0);
-			tolower(c);
 
-			edit_vector.push_back(make_pair(0, c));
+			edit_vector.push_back(make_pair(0, tolower(c)));
 
-			for(int i = 1; i < pattern.length(); i++) {
+			for(unsigned i = 1; i < pattern.length(); i++) {
 				c = pattern.at(i);
-				tolower(c);
-				edit_vector.push_back(make_pair(1,c));
+				edit_vector.push_back(make_pair(1,tolower(c)));
 			}
 
 			Alignment new_a = Alignment(id, strand, length, chromosome, start, edit_vector);
@@ -452,7 +448,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 		}
 
 		// Missing alignment
-		if(no_more_alignments | a.getName() != id) {
+		if(no_more_alignments | (a.getName() != id)) {
 
 			char strand = 'F';
 			string chromosome = "*";
@@ -462,14 +458,12 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 			std::vector<std::pair<int, char> > edit_vector;
 
 			char c = pattern.at(0);
-			tolower(c);
 
-			edit_vector.push_back(make_pair(0, c));
+			edit_vector.push_back(make_pair(0, tolower(c)));
 
-			for(int i = 1; i < pattern.length(); i++) {
+			for(unsigned i = 1; i < pattern.length(); i++) {
 				c = pattern.at(i);
-				tolower(c);
-				edit_vector.push_back(make_pair(1,c));
+				edit_vector.push_back(make_pair(1,tolower(c)));
 			}
 
 			Alignment new_a = Alignment(id, strand, length, chromosome, start, edit_vector);

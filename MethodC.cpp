@@ -422,7 +422,7 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 			// Indels can mess up the indexes. Offset keeps track of them.
 			int offset = 0;
 
-			for(int i = 0; i < edits.size(); i++) {
+			for(unsigned i = 0; i < edits.size(); i++) {
 
 				switch(edits.at(i).second) {
 
