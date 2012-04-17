@@ -7,13 +7,16 @@
 #include <vector>
 
 #include "utils.h"
+#include "MethodB.h"
 
-bool compress_B(std::string infile, string outputfile, string genomefile) {
+
+bool MethodB::compress(std::string infile, string outputfile, string genomefile) 
+{
 	std::vector<Alignment> alignments;
 
 	readAllAlignments(alignments, infile);
 	std::cout << "Found " << alignments.size() << " alignments.\n";
-	std::sort(alignments.begin(), alignments.end(), startPosComp);
+	std::sort(alignments.begin(), alignments.end(), startPosComp); // If pre-sorted wouldn't need so much memory
 
 	bit_file_c out;
 	/* open bit file for writing */
@@ -26,25 +29,32 @@ bool compress_B(std::string infile, string outputfile, string genomefile) {
 		long posField = alignments[i].getStart() - prevPos;
 		long lengthField = alignments[i].getLength();
 		long edField = alignments[i].getEdits().size();
-		prevPos = posField;
+		prevPos = alignments[i].getStart();
 
 		writeGammaCode(out, posField);
-		std::cout << posField << "\n";
 		writeGammaCode(out, lengthField);
-		std::cout << lengthField << "\n";
+		out.PutBit(alignments[i].getStrand() == 'F' ? 0 : 1);
 		writeGammaCode(out, edField);
-		std::cout << edField << "\n";
 
-		// TODO : edit ops
+		// Write edit ops
 
-		out.ByteAlign();
+		long prevEdPos = 0;
+		for(int j = 0; j < edField; ++j)
+		{
+			long edPos = alignments[i].getEdits()[j].first;
+			edPos -= prevEdPos; // Assuming here that edit ops come in increasing order by position
+			prevEdPos = alignments[i].getEdits()[j].first;
+			int edCode = getEditCode(alignments[i].getEdits()[j].second);
+			writeEditOp(out, edPos, edCode);
+		}
 	}
 
 	out.Close();
 	return true;
 }
 
-bool decompress_B(std::string inputfile, std::string outputfile, std::string genomefile)
+
+bool MethodB::decompress(std::string inputfile, std::string outputfile, std::string genomefile)
 {
 	ofstream out(outputfile.c_str());
 	bit_file_c in;
@@ -76,18 +86,46 @@ bool decompress_B(std::string inputfile, std::string outputfile, std::string gen
 		return false;
 	}
 
-	while(in.good())
+	long prevPos = 0;
+	long readNumber = 1;
+	while(true)
 	{
 		long posField = readGammaCode(in);
 		if(!in.good())
 			break;
+		posField += prevPos;
+		prevPos = posField;
 		long lengthField = readGammaCode(in);
+		std::string read = refSeq.substr(posField, lengthField);
+		if(in.GetBit())
+		{
+			complement(read);
+			std::reverse(read.begin(), read.end());
+		}
+		if(posField >= refSeq.length())
+			std::cerr << posField << " >= " << refSeq.length() << '\n';
+
 		long edField = readGammaCode(in);
-		in.ByteAlign();
+		std::cout << posField << '\t' << lengthField << '\t' << edField;
 
-		// TODO
+		long lastEditPos = 0;
+		long offset = 0;
+		for(long i = 0; i < edField;++i)
+		{
+			std::pair<long, int> edOp = readEditOp(in);
+			lastEditPos += edOp.first;
+			offset += modifyString(edOp.second, read, lastEditPos+offset);
+			std::cout << '\t' << edOp.first << ' ' << edOp.second << ' ' << offset;
+		}
+
+		std::cout << '\n';
+
+		if(read.length() > 0)
+		{
+			out << ">Read_" << readNumber++ << '\n';
+			out << read << '\n';
+		}
 	}
-
 
 	return true;
 }

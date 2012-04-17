@@ -96,10 +96,18 @@ int main(int argc, char **argv)
 		case packing_mode_b:
 
 			if(xc_mode == zip_mode) {
-
+				if(MethodB::compress(first_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
 			}
 			else {
-
+				if(MethodB::decompress(first_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
 			}
 			break;
 

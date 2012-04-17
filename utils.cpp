@@ -23,43 +23,22 @@ void writeGammaCode(bit_file_c& out, long value)
 	assert(out.good());
 
 	if(value == 0) {
-		if(out.PutBit(value) == EOF) {
-			std::cerr << "Error writing gamma code." << std::endl;
-			out.Close();
-			exit(-1);
-		}
+		out.PutBit(0);
 		return;
 	}
 
 	unsigned length = (unsigned)floor(log2(value+1));		
 	// The preceeding 1s
-	int temp = 1;
-	for(int i = 0; i < length; i++) {
-		if(out.PutBit(temp) == EOF) {
-			std::cerr << "Error writing gamma code." << std::endl;
-			out.Close();
-			exit(-1);
-		}
-	}
+	for(int i = 0; i < length; i++)
+		out.PutBit(1);
 
 	// The delimiting 0
-	temp = 0;
-	if(out.PutBit(temp) == EOF) {
-		std::cerr << "Error writing gamme code." << std::endl;
-		out.Close();
-		exit(-1);
-	}
+	out.PutBit(0);
 
 	// The integer itself using log2(n) bits
 	value = value - pow(2, length) + 1;
 
-	if(out.PutBitsInt(&value, length, sizeof(long)) == EOF)
-	{
-		std::cerr << "Error writing gamma code." << std::endl;
-		out.Close();
-		exit(-2);
-	}
-
+	out.PutBitsInt(&value, length, sizeof(long));
 }
 
 long readGammaCode(bit_file_c& in)
@@ -77,15 +56,7 @@ long readGammaCode(bit_file_c& in)
 	if(i == 0 && count == 0)
 		return 0;
 
-	if(i == EOF) {
-		std::cerr << "Error reading gamma code." << std::endl;
-		in.Close();
-	}
-
-	if(in.GetBitsInt(&value, count, sizeof(long)) == EOF) {
-		std::cerr << "Error reading gamma code." << std::endl;
-		in.Close();
-	}
+	in.GetBitsInt(&value, count, sizeof(long));
 
 	return value + pow(2,count) - 1;
 }
@@ -160,3 +131,88 @@ std::map<std::string, char> code_chromosomes(std::string genomefile) {
 	return codes;
 }
 
+int getEditCode(char c)
+{
+	switch(c) {
+
+		case 'A':
+			return mismatch_A;
+		case 'C':
+			return mismatch_C;
+		case 'G':
+			return mismatch_G;
+		case 'T':
+			return mismatch_T;
+		case 'N':
+			return mismatch_N;
+		case 'a':
+			return insertion_A;
+		case 'c':
+			return insertion_C;
+		case 'g':
+			return insertion_G;
+		case 't':
+			return insertion_T;
+		case 'D':
+			return deletion;
+		default:
+			std::cerr << "ERROR AT GETEDITCODE() " << c << "\n";
+			return -1;
+	}
+}
+
+
+void writeEditOp(bit_file_c& out, long edPos, int edCode)
+{
+	writeGammaCode(out, edPos);
+	out.PutBitsInt(&edCode, 4, sizeof(int));
+}
+
+std::pair<long, int> readEditOp(bit_file_c& in)
+{
+	long pos = readGammaCode(in);
+	int code = 0;
+	in.GetBitsInt(&code, 4, sizeof(int));
+	return std::make_pair(pos, code);
+}
+
+long modifyString(int edCode, std::string& str, int index)
+{
+	if(index >= str.length())
+		std::cerr << "Edit position " << index << " >= String length " << str.length() << '\n';
+	switch(edCode) {
+		case mismatch_A:
+			str[index] = 'A';	
+			return 0;
+		case mismatch_C:
+			str[index] = 'C';
+			return 0;
+		case mismatch_G:
+			str[index] = 'A';	
+			return 0;
+		case mismatch_T:
+			str[index] = 'C';
+			return 0;
+		case mismatch_N:
+			str[index] = 'N';
+			return 0;
+		case insertion_A:
+			str.insert(index, 1, 'A');
+			return 1;
+		case insertion_C:
+			str.insert(index, 1, 'C');
+			return 1;
+		case insertion_G:
+			str.insert(index, 1, 'G');
+			return 1;
+		case insertion_T:
+			str.insert(index, 1, 'T');
+			return 1;
+		case deletion:
+			str.erase(index, 1);
+			return -1;
+		default:
+			std::cerr << edCode << " <- Unknown edit code\n";
+			return 0;
+	}
+}
