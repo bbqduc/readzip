@@ -295,7 +295,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 			for(unsigned i = 1; i < pattern.length(); i++) {
 				c = pattern.at(i);
-				edit_vector.push_back(make_pair(1,tolower(c)));
+				edit_vector.push_back(make_pair((int)i,tolower(c)));
 			}
 
 			Alignment new_a(id, strand, length, chromosome, start, edit_vector);
@@ -316,6 +316,8 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 	in_reads.close();
 	out.close();
 
+	system(("rm " + temp_file).c_str());
+
 	return true;
 
 }
@@ -327,7 +329,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 	std::string temp_file_1 = outputfile_1 + ".tmp";
 	std::string temp_file_2 = outputfile_2 + ".tmp";
 
-	std::string callstring = "./readaligner/readaligner ";
+	std::string callstring = "./readaligner/readaligner -i3 ";
 
 	if(read_mode == read_mode_fasta)
 		callstring += "--fasta ";
@@ -482,6 +484,9 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 
 	in_reads.close();
 	out.close();
+
+	system(("rm " + temp_file_1).c_str());
+	system(("rm " + temp_file_2).c_str());
 
 	return true;
 }

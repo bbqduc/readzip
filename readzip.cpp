@@ -147,6 +147,8 @@ int main(int argc, char **argv)
 				else
 					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
 
+				system(("rm " + alignment_file).c_str());
+
 			}
 			else {
 
@@ -220,6 +222,9 @@ int main(int argc, char **argv)
 				}
 				else
 					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+
+				system(("rm " + alignment_file_1).c_str());
+				system(("rm " + alignment_file_2).c_str());
 
 			}
 			else {

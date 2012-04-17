@@ -325,7 +325,20 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 		}
 
 		// Reconstruct the data
-		string data = chromosomes[chromosome].substr(start-1, length);
+
+		string data = "";
+
+		if(chromosome != "*" && start != 0 && length != 0)
+			data = chromosomes[chromosome].substr(start-1, length);
+
+		// There's possibility that trailing zeros cause "valid" looking alignment, check!
+		if(chromosome != "*" && ((start == 0) | (length == 0))) {
+			out.close();
+			in.Close();
+			chromosome_codes.clear();
+			chromosomes.clear();
+			return true;
+		}
 
 		// Indels can mess up the indexes. Offset keeps track of them.
 		int offset = 0;
@@ -347,25 +360,89 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 					data[edits.at(i).first+offset] = 'T';
 					break;
 				case 'a':
-					data = data.substr(0,edits.at(i).first+offset) + "A" + data.substr(edits.at(i).first+offset, data.length());
-					offset++;
+				{
+					if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "A" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == 0)) {
+						data = "A" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "A";
+						offset++;						
+					}
+					else {
+						data = "A";
+					}
 					break;
+				}
+
 				case 'c':
-					data = data.substr(0,edits.at(i).first+offset) + "C" + data.substr(edits.at(i).first+offset, data.length());
-					offset++;
+				{
+					if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "C" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == 0)) {
+						data = "C" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "C";
+						offset++;						
+					}
+					else {
+						data = "C";
+					}
 					break;
+				}
+
 				case 'g':
-					data = data.substr(0,edits.at(i).first+offset) + "G" + data.substr(edits.at(i).first+offset, data.length());
-					offset++;
+				{
+					if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "G" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == 0)) {
+						data = "G" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "G";
+						offset++;						
+					}
+					else {
+						data = "G";
+					}
 					break;
+				}
 				case 't':
-					data = data.substr(0,edits.at(i).first+offset) + "T" + data.substr(edits.at(i).first+offset, data.length());
-					offset++;
+				{
+					if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "T" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == 0)) {
+						data = "T" + data.substr(edits.at(i).first+offset, data.length());
+						offset++;
+					}
+					else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+						data = data.substr(0,edits.at(i).first+offset) + "T";
+						offset++;						
+					}
+					else {
+						data = "T";
+					}
 					break;
+				}
 				case 'D':
-					data = data.substr(0,edits.at(i).first+offset) + data.substr(edits.at(i).first+1+offset, data.length());
+				{
+					data = data.substr(0,edits.at(i).first+offset) + data.substr(edits.at(i).first+offset+1, data.length());
 					offset--;
 					break;
+				}
 			}
 		}
 
