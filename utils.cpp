@@ -199,6 +199,8 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 	string pattern;
 	string row;
 
+	std::vector<std::pair<int, char> > dummy;
+
 	Alignment a;
 
 	bool no_more_alignments = false;
@@ -239,7 +241,8 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 				edit_vector.push_back(make_pair(1,c));
 			}
 
-			Alignment new_a = Alignment(id, strand, length, chromosome, start, edit_vector);
+			Alignment new_a(id, strand, length, chromosome, start, edit_vector);
+
 			out << new_a.toString() << endl;
 
 		}
@@ -255,6 +258,8 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 	in_reads.close();
 	out.close();
+
+	return true;
 
 }
 
@@ -425,4 +430,5 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 	in_reads.close();
 	out.close();
 
+	return true;
 }

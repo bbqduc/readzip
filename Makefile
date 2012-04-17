@@ -7,6 +7,8 @@ all: readzip
 
 readzip: $(OBJS) readzip.o
 	$(CC) -o readzip readzip.o $(OBJS)
+utils.o:
+	$(CC) -ggdb -c utils.cpp
 
 
 
