@@ -183,7 +183,7 @@ std::pair<long, int> readEditOp(bit_file_c& in)
 	return std::make_pair(pos, code);
 }
 
-long modifyString(int edCode, std::string& str, int index)
+long modifyString(int edCode, std::string& str, size_t index)
 {
 	if(index >= str.length())
 		std::cerr << "Edit position " << index << " >= String length " << str.length() << '\n';

@@ -42,7 +42,7 @@ void writeEditOp(bit_file_c& out, long edPos, int edCode);
 
 int getEditCode(char c);
 
-long modifyString(int edCode, std::string& str, int index);
+long modifyString(int edCode, std::string& str, size_t index);
 
 /* Prepares the reads for compression by aligning them (Single reads) */
 bool align_single(std::string inputfile, std::string genome_file, std::string outputfile, read_mode_t read_mode) ;
