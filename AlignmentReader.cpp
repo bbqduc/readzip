@@ -29,6 +29,8 @@ bool AlignmentReader::next(Alignment &a) {
 
 			vector<string> alignment_parts = split(row.c_str(), '\t');
 
+			string name = alignment_parts.at(0);
+
 			string chromosome = alignment_parts.at(1);
 
 			long start = atol(alignment_parts.at(2).c_str());
@@ -51,7 +53,7 @@ bool AlignmentReader::next(Alignment &a) {
 
 			}
 
-			a = Alignment(strand, length, chromosome, start, edits);
+			a = Alignment(name, strand, length, chromosome, start, edits);
 
 		}
 	}

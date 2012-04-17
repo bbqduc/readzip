@@ -31,7 +31,11 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
         return false;
     }
 
-	map<string, char> chromosome_codes = code_chromosomes(genomefile);
+	map<string, int> chromosome_codes = code_chromosomes(genomefile);
+
+	// Find out how many bits needed for fixed length
+	int bits = ceil(log2(chromosome_codes.size()));
+
 
 	while(first_reader->next(a_1)) {
 
@@ -72,9 +76,9 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 		}
 
 		// Output code for chromosome
-		char chrom_code = chromosome_codes[a_1.getChromosome()];
+		int chrom_code = chromosome_codes[a_1.getChromosome()];
 
-		if(out.PutChar(chrom_code) == EOF) {
+		if(out.PutBitsInt(&chrom_code, bits, sizeof(chrom_code)) == EOF) {
 			cerr << "Error: writing chromosome code!" << endl;
 			return false;
 		}
@@ -119,12 +123,16 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 
 			int size = edits.size();
 
+			int previous = 0;
+
 			// Number of edits first that know how many to read back
 			writeGammaCode(out, size);
 
 			for(int i = 0; i < size; i++) {
 
-				writeGammaCode(out, edits.at(i).first);
+				writeGammaCode(out, edits.at(i).first-previous);
+
+				previous = edits.at(i).first;
 
 				int edit_value = 0;
 
@@ -216,8 +224,10 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 	}
 
 	// Reconstruct the codes for chromosomes
-	map<string, char> chromosome_codes = code_chromosomes(genomefile);
+	map<string, int> chromosome_codes = code_chromosomes(genomefile);
 
+	// Find out how many bits needed for fixed length
+	int bits = ceil(log2(chromosome_codes.size()));
 
 	// Read chromosome content
 	string info = "";
@@ -248,10 +258,10 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 	while(true) {
 
 		// Get the values	
-		char chromosome_code;
+		int chromosome_code;
 
 		// If this returns EOF, the file has been completely read, it's not an error.
-		if((chromosome_code = in.GetChar()) == EOF) {
+		if((in.GetBitsInt(&chromosome_code, bits, sizeof(chromosome_code))) == EOF) {
 			out_1.close();
 			out_2.close();
 			in.Close();
@@ -262,7 +272,7 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 
 		string chromosome = "";
 
-		map<string, char>::iterator it;
+		map<string, int>::iterator it;
 
 		for(it = chromosome_codes.begin(); it != chromosome_codes.end(); it++) {
 			if((it->second) == chromosome_code) {
@@ -290,9 +300,12 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 				strand = 'F';
 				break;
 			case EOF:
-				cerr << "Failure to decompress strand." << endl;
+				out_1.close();
+				out_2.close();
 				in.Close();
-				return false;
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
 
 		}
 
@@ -313,17 +326,52 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 					start -= readGammaCode(in);
 			}				
 
+			if(start == -1) {
+
+				out_1.close();
+				out_2.close();
+				in.Close();
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
+			}
+
+
 			length = readGammaCode(in);
+
+			if(length == -1) {
+
+				out_1.close();
+				out_2.close();
+				in.Close();
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
+			}
+
 
 			vector<pair<int, char> > edits;
 
 			// Read how many edits there are
 			int edits_size = readGammaCode(in);
 
+			if(edits_size == -1) {
+
+				out_1.close();
+				out_2.close();
+				in.Close();
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
+			}
+
+			int pos = 0;
+
 			// Read the edits
 			for(int i = 0; i < edits_size; i++) {
 
-				int pos = readGammaCode(in);
+				pos += readGammaCode(in);
+
 				int edit_number = 0;
 				char edit;
 

@@ -29,14 +29,17 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
         return false;
     }
 
-	map<string, char> chromosome_codes = code_chromosomes(genomefile);
+	map<string, int> chromosome_codes = code_chromosomes(genomefile);
+
+	// Find out how many bits needed for fixed length
+	int bits = ceil(log2(chromosome_codes.size()));
 
 	while(reader->next(a)) {
 
 		// Output code for chromosome
-		char chrom_code = chromosome_codes[a.getChromosome()];
+		int chrom_code = chromosome_codes[a.getChromosome()];
 
-		if(out.PutChar(chrom_code) == EOF) {
+		if(out.PutBitsInt(&chrom_code, bits, sizeof(chrom_code)) == EOF) {
 			cerr << "Error: writing chromosome code!" << endl;
 			return false;
 		}
@@ -58,17 +61,21 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 		writeGammaCode(out, a.getStart());
 		writeGammaCode(out, a.getLength());
 
-		// Output codes for the edits (position with gamma code and the edits with fixed length)
+		// Output codes for the edits (relative position with gamma code and the edits with fixed length)
 		// Output of readaligner codes mismatches with ACGT and insertions with acgt
 		vector<pair<int,char> > edits = a.getEdits();
 		int size = edits.size();
+
+		int previous = 0;
 
 		// Number of edits first that know how many to read back
 		writeGammaCode(out, size);
 
 		for(int i = 0; i < size; i++) {
 
-			writeGammaCode(out, edits.at(i).first);
+			writeGammaCode(out, edits.at(i).first-previous);
+
+			previous = edits.at(i).first;
 
 			int edit_value = 0;
 
@@ -107,15 +114,15 @@ bool MethodA::compress_A(std::string inputfile, string outputfile, string genome
 				cerr << "Error: writing edits!" << endl;
 				return false;
 			}
-
-			edits.clear();
-
 		}
 
-		// Sets the buffer to nearest byte (decompression doesn't always work correctly if this isn't done)
-		out.ByteAlign();
+		edits.clear();
 
 	}
+
+	// Writes out the rest of byte to avoid complications
+	out.ByteAlign();
+
 
 	delete reader;
 	out.Close();
@@ -149,8 +156,10 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 	}
 
 	// Reconstruct the codes for chromosomes
-	map<string, char> chromosome_codes = code_chromosomes(genomefile);
+	map<string, int> chromosome_codes = code_chromosomes(genomefile);
 
+	// Find out how many bits needed for fixed length
+	int bits = ceil(log2(chromosome_codes.size()));
 
 	// Read chromosome content
 	string info = "";
@@ -179,11 +188,11 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 	chromosomes[id] = info;
 
 	while(true) {
-		// Get the values	
-		char chromosome_code;
 
-		// If this returns EOF, the file has been completely read, it's not an error.
-		if((chromosome_code = in.GetChar()) == EOF) {
+		// Get the values	
+		int chromosome_code = 0;
+
+		if((in.GetBitsInt(&chromosome_code, bits, sizeof(chromosome_code))) == EOF) {
 			out.close();
 			in.Close();
 			chromosome_codes.clear();
@@ -193,7 +202,7 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 
 		string chromosome = "";
 
-		map<string, char>::iterator it;
+		map<string, int>::iterator it;
 
 		for(it = chromosome_codes.begin(); it != chromosome_codes.end(); it++) {
 			if((it->second) == chromosome_code) {
@@ -221,24 +230,55 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 				strand = 'F';
 				break;
 			case EOF:
-				cerr << "Failure to decompress strand." << endl;
+				out.close();
 				in.Close();
-				return false;
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
 
 		}
 
 		long start = readGammaCode(in);
+
+		if(start == -1) {
+			out.close();
+			in.Close();
+			chromosome_codes.clear();
+			chromosomes.clear();
+			return true;
+		}
+
 		long length = readGammaCode(in);
+
+		if(length == -1) {
+			out.close();
+			in.Close();
+			chromosome_codes.clear();
+			chromosomes.clear();
+			return true;
+		}
+
 
 		vector<pair<int, char> > edits;
 
 		// Read how many edits there are
 		int edits_size = readGammaCode(in);
 
+		if(edits_size == -1) {
+			out.close();
+			in.Close();
+			chromosome_codes.clear();
+			chromosomes.clear();
+			return true;
+		}
+
+		int pos = 0;
+
 		// Read the edits
 		for(int i = 0; i < edits_size; i++) {
 
-			int pos = readGammaCode(in);
+			pos += readGammaCode(in);
+
 			int edit_number = 0;
 			char edit;
 
@@ -281,6 +321,7 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 			}
 
 			edits.push_back(make_pair(pos, edit));
+
 		}
 
 		// Reconstruct the data
@@ -334,9 +375,6 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 		}
 
 		out << data << endl;
-
-		in.ByteAlign();
-
 		edits.clear();
 	}
 }
