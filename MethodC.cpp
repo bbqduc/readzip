@@ -49,28 +49,28 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 		// Sanity checks that pairs have been aligned correctly
 		if(a_1.getChromosome() != a_2.getChromosome()) {
 
-			cerr << "Mates have different chromosome, please check the alignment." << endl;
+			cerr << "Mates have different chromosome, please check the alignment for read " << a_1.getName() << "." << endl;
 			return false;
 
 		}
 
 		if(a_1.getStrand() != a_2.getStrand()) {
 
-			cerr << "Mates have different strand, please check the alignment." << endl;
+			cerr << "Mates have different strand, please check the alignment for read " << a_1.getName() << "." << endl;
 			return false;
 
 		}
 
 		if(a_1.getStrand() == 'F' && (a_1.getStart() > a_2.getStart())) {
 
-			cerr << "Order of the mates is wrong (forward strand), please check the alignment and/or the order of input files." << endl;
+			cerr << "Order of the mates is wrong (forward strand), please check the alignment  for read " << a_1.getName() << " and/or the order of input files." << endl;
 			return false;
 
 		}
 
 		if(a_1.getStrand() == 'R' && (a_1.getStart() < a_2.getStart())) {
 
-			cerr << "Order of the mates is wrong (reverse strand), please check the alignment and/or the order of input files." << endl;
+			cerr << "Order of the mates is wrong (reverse strand), please check the alignment  for read " << a_1.getName() << " and/or the order of input files." << endl;
 			return false;
 
 		}
@@ -417,12 +417,26 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 			}
 
 			// Reconstruct the data
-			string data = chromosomes[chromosome].substr(start-1, length);
+
+			string data = "";
+
+			if(chromosome != "*" && start != 0 && length != 0)
+				data = chromosomes[chromosome].substr(start-1, length);
+
+			// There's possibility that trailing zeros cause "valid" looking alignment, check!
+			if(chromosome != "*" && ((start == 0) | (length == 0))) {
+				out_1.close();
+				out_2.close();
+				in.Close();
+				chromosome_codes.clear();
+				chromosomes.clear();
+				return true;
+			}
 
 			// Indels can mess up the indexes. Offset keeps track of them.
 			int offset = 0;
 
-			for(unsigned i = 0; i < edits.size(); i++) {
+			for(int i = 0; i < edits.size(); i++) {
 
 				switch(edits.at(i).second) {
 
@@ -439,25 +453,89 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 						data[edits.at(i).first+offset] = 'T';
 						break;
 					case 'a':
-						data = data.substr(0,edits.at(i).first+offset) + "A" + data.substr(edits.at(i).first+offset, data.length());
-						offset++;
+					{
+						if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "A" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == 0)) {
+							data = "A" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "A";
+							offset++;						
+						}
+						else {
+							data = "A";
+						}
 						break;
+					}
+
 					case 'c':
-						data = data.substr(0,edits.at(i).first+offset) + "C" + data.substr(edits.at(i).first+offset, data.length());
-						offset++;
+					{
+						if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "C" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == 0)) {
+							data = "C" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "C";
+							offset++;						
+						}
+						else {
+							data = "C";
+						}
 						break;
+					}
+
 					case 'g':
-						data = data.substr(0,edits.at(i).first+offset) + "G" + data.substr(edits.at(i).first+offset, data.length());
-						offset++;
+					{
+						if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "G" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == 0)) {
+							data = "G" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "G";
+							offset++;						
+						}
+						else {
+							data = "G";
+						}
 						break;
+					}
 					case 't':
-						data = data.substr(0,edits.at(i).first+offset) + "T" + data.substr(edits.at(i).first+offset, data.length());
-						offset++;
+					{
+						if((data.length() > 0) && (edits.at(i).first != 0) && (edits.at(i).first < data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "T" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == 0)) {
+							data = "T" + data.substr(edits.at(i).first+offset, data.length());
+							offset++;
+						}
+						else if((data.length() > 0) && (edits.at(i).first == data.length())) {
+							data = data.substr(0,edits.at(i).first+offset) + "T";
+							offset++;						
+						}
+						else {
+							data = "T";
+						}
 						break;
+					}
 					case 'D':
-						data = data.substr(0,edits.at(i).first+offset) + data.substr(edits.at(i).first+1+offset, data.length());
+					{
+						data = data.substr(0,edits.at(i).first+offset) + data.substr(edits.at(i).first+offset+1, data.length());
 						offset--;
 						break;
+					}
 				}
 			}
 
