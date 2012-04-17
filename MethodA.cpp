@@ -9,9 +9,6 @@
 
 using namespace std;
 
-// Fixed length code (with 4 bits) can be used to display these
-enum edit_codes_t {mismatch_A, mismatch_C, mismatch_G, mismatch_T, insertion_A, insertion_C, insertion_G, insertion_T, deletion};
-
 // Compresses given alignment file.
 // Returns true on success and false if there were any problems.
 bool MethodA::compress_A(std::string inputfile, string outputfile, string genomefile) {

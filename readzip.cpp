@@ -107,6 +107,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	string genome_file, output_file, input_file;
 
 	// TODO Calling each mode (fill up as modes are implemented)
 	switch(mode) {
@@ -121,11 +122,11 @@ int main(int argc, char **argv)
 				return 1;
 			}
 
-			string genome_file = string(argv[optind++]); 
+			genome_file = string(argv[optind++]); 
 
-			string input_file = string(argv[optind++]);
+			input_file = string(argv[optind++]);
 
-			string output_file = string(argv[optind++]);
+			output_file = string(argv[optind++]);
 
 
 			if(xc_mode == zip_mode) {
@@ -160,11 +161,25 @@ int main(int argc, char **argv)
 		}			
 		case packing_mode_b:
 
-			if(xc_mode == zip_mode) {
+			genome_file = string(argv[optind++]); 
 
+			input_file = string(argv[optind++]);
+
+			output_file = string(argv[optind++]);
+
+			if(xc_mode == zip_mode) {
+				if(MethodB::compress(input_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
 			}
 			else {
-
+				if(MethodB::decompress(input_file, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
 			}
 			break;
 
