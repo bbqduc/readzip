@@ -1,5 +1,5 @@
 CC = g++
-CCFLAGS = -Wall -Wextra 
+CCFLAGS = -Wall -Wextra -ggdb
 
 
 OBJS = MethodA.o MethodB.o MethodC.o MethodD.o Alignment.o AlignmentReader.o bitfile.o utils.o
@@ -24,5 +24,6 @@ Alignment.o:
 	$(CC) $(CCFLAGS) -c Alignment.cpp 
 bitfile.o:
 	$(CC) $(CCFLAGS) -c bitfile.cpp 
+
 clean:
 	rm -f core *.o *~ readzip

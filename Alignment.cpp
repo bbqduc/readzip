@@ -9,7 +9,7 @@ Alignment::Alignment(std::string name_, char strand_, int length_, std::string c
 {}
 
 Alignment::Alignment()
-: name(""), strand('0'), length(0), chromosome("NULL"), start(0), edits(0)
+: name("NULL"), strand('0'), length(0), chromosome("NULL"), start(0), edits(0)
 {}
 
 
@@ -22,11 +22,13 @@ std::string Alignment::toString() {
 
 	std::vector<std::pair<int, char> > edit = this->edits;
 
-	for(int i = 0; i < edit.size()-1; i++)
-		sstm << edit.at(i).first << " " << edit.at(i).second << " ";
+	if(edit.size() > 0) {
 
-	// This as last to prevent extra empty space at end
-	if(edit.size() > 0)
+		for(int i = 0; i < edit.size()-1; i++)
+			sstm << edit.at(i).first << " " << edit.at(i).second << " ";
+
 		sstm << edit.at(edit.size()-1).first << " " << edit.at(edits.size()-1).second;
 
+	}
+	return sstm.str();
 }

@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 				std::string index = genome_file.substr(0, genome_file.find_first_of('.'));
 
 				// Call to align
-				if(align_single(input_file, index, alignment_file, read_mode)) {
+				if(!(align_single(input_file, index, alignment_file, read_mode))) {
 					std::cerr << "Error! Failure in aligning the reads." << std::endl;
 					exit(1);
 				}
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 				std::string index = genome_file.substr(0, genome_file.find_first_of('.'));
 
 				// Call to align
-				if(align_pair(input_file_1, input_file_2, index, alignment_file_1, alignment_file_2, read_mode)) {
+				if(!(align_pair(input_file_1, input_file_2, index, alignment_file_1, alignment_file_2, read_mode))) {
 					std::cerr << "Error! Failure in aligning the reads." << std::endl;
 					exit(1);
 				}

@@ -377,4 +377,6 @@ bool MethodA::decompress_A(std::string inputfile, std::string outputfile, std::s
 		out << data << endl;
 		edits.clear();
 	}
+
+	return true;
 }

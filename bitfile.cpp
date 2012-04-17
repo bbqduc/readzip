@@ -681,7 +681,8 @@ int bit_file_c::GetBits(void *bits, const unsigned int count)
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         bytes[offset] = (char)returnValue;
@@ -700,7 +701,8 @@ int bit_file_c::GetBits(void *bits, const unsigned int count)
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             bytes[offset] <<= 1;
@@ -750,7 +752,8 @@ int bit_file_c::PutBits(void *bits, const unsigned int count)
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         remaining -= 8;
@@ -767,7 +770,8 @@ int bit_file_c::PutBits(void *bits, const unsigned int count)
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             tmp <<= 1;
@@ -857,7 +861,8 @@ int bit_file_c::GetBitsLE(void *bits, const unsigned int count)
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         bytes[offset] = (char)returnValue;
@@ -874,7 +879,8 @@ int bit_file_c::GetBitsLE(void *bits, const unsigned int count)
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             bytes[offset] <<= 1;
@@ -925,7 +931,8 @@ int bit_file_c::GetBitsBE(void *bits, const unsigned int count,
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         bytes[offset] = (unsigned char)returnValue;
@@ -942,7 +949,8 @@ int bit_file_c::GetBitsBE(void *bits, const unsigned int count,
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             bytes[offset] <<= 1;
@@ -1028,7 +1036,8 @@ int bit_file_c::PutBitsLE(void *bits, const unsigned int count)
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         remaining -= 8;
@@ -1047,7 +1056,8 @@ int bit_file_c::PutBitsLE(void *bits, const unsigned int count)
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             tmp <<= 1;
@@ -1095,7 +1105,8 @@ int bit_file_c::PutBitsBE(void *bits, const unsigned int count,
 
         if (returnValue == EOF)
         {
-            return EOF;
+            if(this->eof())
+                return EOF;
         }
 
         remaining -= 8;
@@ -1114,7 +1125,8 @@ int bit_file_c::PutBitsBE(void *bits, const unsigned int count,
 
             if (returnValue == EOF)
             {
-                return EOF;
+                if(this->eof())
+                    return EOF;
             }
 
             tmp <<= 1;
