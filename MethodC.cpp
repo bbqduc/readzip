@@ -9,7 +9,7 @@
 
 using namespace std;
 
-// Compresses given alignment file.
+// Compresses given alignment files.
 // Returns true on success and false if there were any problems.
 bool MethodC::compress_C(string first_inputfile, string second_inputfile, string outputfile, string genomefile) {
 
@@ -36,7 +36,6 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 	// Find out how many bits needed for fixed length
 	int bits = ceil(log2(chromosome_codes.size()));
 
-
 	while(first_reader->next(a_1)) {
 
 		if(!(second_reader->next(a_2))) {
@@ -46,31 +45,10 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 
 		}
 
-		// Sanity checks that pairs have been aligned correctly
-		if(a_1.getChromosome() != a_2.getChromosome()) {
+		// Sanity check that pairs have been aligned correctly
+		if((a_1.getChromosome() != a_2.getChromosome()) && (a_2.getStart() > a_1.getStart())) {
 
 			cerr << "Mates have different chromosome, please check the alignment for read " << a_1.getName() << "." << endl;
-			return false;
-
-		}
-
-		if(a_1.getStrand() != a_2.getStrand()) {
-
-			cerr << "Mates have different strand, please check the alignment for read " << a_1.getName() << "." << endl;
-			return false;
-
-		}
-
-		if(a_1.getStrand() == 'F' && (a_1.getStart() > a_2.getStart())) {
-
-			cerr << "Order of the mates is wrong (forward strand), please check the alignment  for read " << a_1.getName() << " and/or the order of input files." << endl;
-			return false;
-
-		}
-
-		if(a_1.getStrand() == 'R' && (a_1.getStart() < a_2.getStart())) {
-
-			cerr << "Order of the mates is wrong (reverse strand), please check the alignment  for read " << a_1.getName() << " and/or the order of input files." << endl;
 			return false;
 
 		}
@@ -83,34 +61,37 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 			return false;
 		}
 
-
-		// Output code for strand
-		int value;
-
-		if(a_1.getStrand() == 'R')
-			value = 0;
-		else
-			value = 1;
-
-		if(out.PutBit(value) == EOF) {
-			cerr << "Error: writing strand!" << endl;
-			return false;
-		}
-
-		vector<pair<int,char> > edits;
-
 		for(int mate = 1; mate <= 2; mate++) {
+
+			// Output code for strand
+			int value;
+
+			if(mate == 1) {
+				if(a_1.getStrand() == 'R')
+					value = 0;
+				else
+					value = 1;
+			}
+			else {
+				if(a_2.getStrand() == 'R')
+					value = 0;
+				else
+					value = 1;
+			}
+			if(out.PutBit(value) == EOF) {
+				cerr << "Error: writing strand!" << endl;
+				return false;
+			}
+
+			vector<pair<int,char> > edits;
+
 
 			if(mate == 1) {
 				writeGammaCode(out, a_1.getStart());
 				writeGammaCode(out, a_1.getLength());
 			}
 			else {
-				if(a_1.getStrand() == 'F') 
-					writeGammaCode(out, a_2.getStart() - a_1.getStart());
-				else
-					writeGammaCode(out, a_1.getStart() - a_2.getStart());
-
+				writeGammaCode(out, a_2.getStart() - a_1.getStart());
 				writeGammaCode(out, a_2.getLength());
 			}
 
@@ -178,13 +159,10 @@ bool MethodC::compress_C(string first_inputfile, string second_inputfile, string
 
 		}
 
-		// Sets the buffer to nearest byte (decompression doesn't always work correctly if this isn't done)
-		out.ByteAlign();
-
 	}
 
 	// Check that there's nothing left in second inputfile
-	if(!(second_reader->next(a_2))) {
+	if(second_reader->next(a_2)) {
 
 		cerr << "First input file ended before the second, error in syncronizing the alignments." << endl;
 		return false;
@@ -258,7 +236,7 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 	while(true) {
 
 		// Get the values	
-		int chromosome_code;
+		int chromosome_code = 0;
 
 		// If this returns EOF, the file has been completely read, it's not an error.
 		if((in.GetBitsInt(&chromosome_code, bits, sizeof(chromosome_code))) == EOF) {
@@ -291,42 +269,38 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 
 		int i;
 
-		switch(i = in.GetBit()) {
-
-			case 0:
-				strand = 'R';
-				break;
-			case 1:
-				strand = 'F';
-				break;
-			case EOF:
-				out_1.close();
-				out_2.close();
-				in.Close();
-				chromosome_codes.clear();
-				chromosomes.clear();
-				return true;
-
-		}
-
 		long start = 0;
 		long length = 0;
 
 		for(int mate = 1; mate <= 2; mate++) {
+
+			switch(i = in.GetBit()) {
+
+				case 0:
+					strand = 'R';
+					break;
+				case 1:
+					strand = 'F';
+					break;
+				case EOF:
+					out_1.close();
+					out_2.close();
+					in.Close();
+					chromosome_codes.clear();
+					chromosomes.clear();
+					return true;
+
+			}
 
 			// For first mate, start is coded
 			if(mate == 1)
 				start = readGammaCode(in);
 			// For second, it's the difference compared to first mate
 			else {
-
-				if(strand == 'F')
-					start += readGammaCode(in);
-				else
-					start -= readGammaCode(in);
+				start += readGammaCode(in);
 			}				
 
-			if(start == -1) {
+			if(start == EOF) {
 
 				out_1.close();
 				out_2.close();
@@ -339,7 +313,7 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 
 			length = readGammaCode(in);
 
-			if(length == -1) {
+			if(length == EOF) {
 
 				out_1.close();
 				out_2.close();
@@ -424,7 +398,7 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 				data = chromosomes[chromosome].substr(start-1, length);
 
 			// There's possibility that trailing zeros cause "valid" looking alignment, check!
-			if(chromosome != "*" && ((start == 0) | (length == 0))) {
+			if(chromosome != "*" && (length == 0)) {
 				out_1.close();
 				out_2.close();
 				in.Close();
@@ -550,7 +524,6 @@ bool MethodC::decompress_C(std::string inputfile, std::string first_outputfile, 
 				out_2 << data << endl;
 
 		}
-
-		in.ByteAlign();
 	}
+	return true;
 }
