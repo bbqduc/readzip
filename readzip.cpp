@@ -7,6 +7,23 @@
 #include "MethodD.h"
 #include "utils.h"
 
+void print_help() {
+
+	std::cerr << " Readzip: Tool for compressing/decompressing sequence reads." << std::endl << std::endl
+			<< " Compression/decompression options:" << std::endl
+			<< " -o                    Compress." << std::endl
+			<< " -x                    Decompress." << std::endl << std::endl
+			<< " Compression mode options: " << std::endl
+			<< " -a                    Compress single-end reads, maintain order." << std::endl
+			<< " -b                    Compress single-end reads, do not maintain order." << std::endl
+			<< " -c                    Compress paired-end reads, maintain order." << std::endl
+			<< " -d                    Compress paired-end reads, do not maintain order." << std::endl << std::endl
+			<< " Input formats:" << std::endl
+			<< " -f                    Fasta format." << std::endl
+			<< " -q                    Fastq format." << std::endl << std::endl;
+}
+
+
 enum packing_mode_t {packing_mode_undef, packing_mode_a, packing_mode_b, packing_mode_c, packing_mode_d };
 enum pack_unpack_mode_t {mode_undef, zip_mode, unzip_mode };
 
@@ -20,7 +37,7 @@ int main(int argc, char **argv)
 	// Parse command line parameters
 	int option_index = 0;
 	int c;
-	while((c = getopt(argc, argv, "abcdxofq")) != -1)
+	while((c = getopt(argc, argv, "abcdxofqh")) != -1)
 
 	{
 
@@ -89,9 +106,18 @@ int main(int argc, char **argv)
 			}			
 			read_mode = read_mode_fastq;
 			break;
-
+		case 'h':
+			print_help();
+			exit(0);
 		}
 	}
+
+	if (argc - optind == 0)
+	{
+		cerr << "readzip: for help on usage, use option -h." << endl;
+		return 1;
+	}
+
 
 	// Sanity checks
 	if(read_mode == read_mode_undef) {
@@ -116,7 +142,7 @@ int main(int argc, char **argv)
 		{
 
 			// Parse filenames
-			if (argc - optind < 2)
+			if (argc - optind < 3)
 			{
 				cerr << "readzip: missing input files!" << endl;
 				return 1;
@@ -190,7 +216,7 @@ int main(int argc, char **argv)
 		{
 
 			// Parse filenames
-			if (argc - optind < 3)
+			if (argc - optind < 4)
 			{
 				cerr << "readzip: missing input files!" << endl;
 				return 1;
