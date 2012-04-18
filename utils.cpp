@@ -239,7 +239,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 		exit(1);
 	}
 
-//	system((callstring + " -o " + temp_file + " ./readaligner/" + index + " " + inputfile).c_str());
+	system((callstring + " -o " + temp_file + " ./readaligner/" + index + " " + inputfile).c_str());
 
 	//Create "insertion alignments" for unmapped reads
 	ifstream in_reads(inputfile.c_str());
@@ -345,8 +345,8 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 		exit(1);
 	}
 
-//	system((callstring + " -o " + temp_file_1 + " ./readaligner/" + index + " " + inputfile_1).c_str());
-//	system((callstring + " -o " + temp_file_2 + " ./readaligner/" + index + " " + inputfile_2).c_str());
+	system((callstring + " -o " + temp_file_1 + " ./readaligner/" + index + " " + inputfile_1).c_str());
+	system((callstring + " -o " + temp_file_2 + " ./readaligner/" + index + " " + inputfile_2).c_str());
 
 	//Create "insertion alignments" for unmapped reads
 
