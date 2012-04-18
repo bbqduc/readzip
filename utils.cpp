@@ -228,7 +228,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 	std::string temp_file = outputfile + ".tmp";
 
-	std::string callstring = "./readaligner/readaligner -i3 ";
+	std::string callstring = "./readaligner/readaligner -i3 -v ";
 
 	if(read_mode == read_mode_fasta)
 		callstring += "--fasta ";
