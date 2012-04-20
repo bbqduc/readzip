@@ -26,27 +26,8 @@ bool MethodB::compress(std::string infile, string outputfile, string genomefile)
 	long prevPos = 0;
 	for(size_t i = 0; i < alignments.size(); ++i)
 	{
-		long posField = alignments[i].getStart() - prevPos;
-		long lengthField = alignments[i].getLength();
-		long edField = alignments[i].getEdits().size();
+		writeAlignment(out, alignments[i], prevPos);
 		prevPos = alignments[i].getStart();
-
-		writeGammaCode(out, posField);
-		writeGammaCode(out, lengthField);
-		out.PutBit(alignments[i].getStrand() == 'F' ? 0 : 1);
-		writeGammaCode(out, edField);
-
-		// Write edit ops
-
-		long prevEdPos = 0;
-		for(int j = 0; j < edField; ++j)
-		{
-			long edPos = alignments[i].getEdits()[j].first;
-			edPos -= prevEdPos; // Assuming here that edit ops come in increasing order by position
-			prevEdPos = alignments[i].getEdits()[j].first;
-			int edCode = getEditCode(alignments[i].getEdits()[j].second);
-			writeEditOp(out, edPos, edCode);
-		}
 	}
 
 	out.Close();
@@ -90,36 +71,10 @@ bool MethodB::decompress(std::string inputfile, std::string outputfile, std::str
 	long readNumber = 1;
 	while(true)
 	{
-		long posField = readGammaCode(in);
-		if(!in.good())
+		std::string read;
+		prevPos = getRead(in, refSeq, read, prevPos);
+		if(prevPos < 0)
 			break;
-		posField += prevPos;
-		prevPos = posField;
-		long lengthField = readGammaCode(in);
-		std::string read = refSeq.substr(posField, lengthField);
-		if(in.GetBit())
-		{
-			complement(read);
-			std::reverse(read.begin(), read.end());
-		}
-		if(posField >= refSeq.length())
-			std::cerr << posField << " >= " << refSeq.length() << '\n';
-
-		long edField = readGammaCode(in);
-		std::cout << posField << '\t' << lengthField << '\t' << edField;
-
-		long lastEditPos = 0;
-		long offset = 0;
-		for(long i = 0; i < edField;++i)
-		{
-			std::pair<long, int> edOp = readEditOp(in);
-			lastEditPos += edOp.first;
-			offset += modifyString(edOp.second, read, lastEditPos+offset);
-			std::cout << '\t' << edOp.first << ' ' << edOp.second << ' ' << offset;
-		}
-
-		std::cout << '\n';
-
 		if(read.length() > 0)
 		{
 			out << ">Read_" << readNumber++ << '\n';

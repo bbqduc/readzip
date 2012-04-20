@@ -1,0 +1,39 @@
+Usage:
+
+./readzip [options] referenceFile inputFile1 [inputFile2] outputFile1 [outputFile2]
+
+options:
+
+-a, -b, -c, -d : The method to be used
+	a -- Single reads, order maintained
+	b -- Single reads, order not maintained
+	c -- Paired reads, order maintained
+	d -- Paired reads, order not maintained
+
+-x, -o : Compress or decompress
+	x -- extract
+	o -- compress
+
+-f, -q : Input file format ( Output is always fasta )
+	f -- fasta
+	q -- fastq
+
+## IMPORTANT
+	Before calling readzip you should build a readaligner index for your reference by calling:
+	readaligner/builder /path/to/reference.fasta
+
+Example usage:
+
+I have a reference r.fasta and a read set reads.fasta, and wish to compress them using the B method.
+
+./readzip -bof r.fasta reads.fasta reads.rzip
+
+Is the command i should use.
+
+For paired reads with method C:
+
+./readzip -cof r.fasta reads1.fasta reads2.fasta reads.rzip
+
+And extraction :
+
+./readzip -cxf r.fasta reads.rzip reads1_uncompressed.fasta reads2_uncompressed.fasta

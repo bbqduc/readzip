@@ -12,6 +12,37 @@ bool startPosComp(const Alignment& a, const Alignment& b)
 	return a.getStart() < b.getStart();
 }
 
+void writeAlignment(bit_file_c& out, Alignment& a, long prevPos)
+{
+	long posField = a.getStart() - prevPos;
+	if(posField < 0)
+		posField = -posField;
+	long lengthField = a.getLength();
+	long edField = a.getEdits().size();
+
+	writeGammaCode(out, posField);
+	writeGammaCode(out, lengthField);
+	out.PutBit(a.getStrand() == 'F' ? 0 : 1);
+	writeGammaCode(out, edField);
+
+	// Write edit ops
+
+	long prevEdPos = 0;
+	for(int j = 0; j < edField; ++j)
+	{
+		long edPos = a.getEdits()[j].first;
+		edPos -= prevEdPos; // Assuming here that edit ops come in increasing order by position
+		prevEdPos = a.getEdits()[j].first;
+		int edCode = getEditCode(a.getEdits()[j].second);
+		writeEditOp(out, edPos, edCode);
+	}
+}
+
+bool startPosPairComp(const std::pair<Alignment, Alignment>& a, const std::pair<Alignment, Alignment>& b)
+{
+	return startPosComp(a.first, b.first); 
+}
+
 void readAllAlignments(std::vector<Alignment>& alignments, const std::string& infile)
 {
 	AlignmentReader reader(AlignmentReader::input_tabdelimited, infile);
@@ -19,6 +50,16 @@ void readAllAlignments(std::vector<Alignment>& alignments, const std::string& in
 
 	while(reader.next(a))
 		alignments.push_back(a);
+}
+
+void readAllPairAlignments(std::vector<std::pair<Alignment, Alignment> >& alignments, const std::string& infile1, const std::string& infile2)
+{
+	AlignmentReader first_reader(AlignmentReader::input_tabdelimited, infile1);
+	AlignmentReader second_reader(AlignmentReader::input_tabdelimited, infile2);
+
+	Alignment a, b;
+	while(first_reader.next(a) && second_reader.next(b))
+		alignments.push_back(std::make_pair(a,b));
 }
 
 void writeGammaCode(bit_file_c& out, long value)
@@ -160,6 +201,8 @@ int getEditCode(char c)
 			return insertion_G;
 		case 't':
 			return insertion_T;
+		case 'n':
+			return insertion_N;
 		case 'D':
 			return deletion;
 		default:
@@ -185,8 +228,8 @@ std::pair<long, int> readEditOp(bit_file_c& in)
 
 long modifyString(int edCode, std::string& str, size_t index)
 {
-	if(index >= str.length())
-		std::cerr << "Edit position " << index << " >= String length " << str.length() << '\n';
+	if(index > str.length())
+		std::cerr << "Edit position " << index << " > String length " << str.length() << '\n';
 	switch(edCode) {
 		case mismatch_A:
 			str[index] = 'A';	
@@ -215,6 +258,9 @@ long modifyString(int edCode, std::string& str, size_t index)
 		case insertion_T:
 			str.insert(index, 1, 'T');
 			return 1;
+		case insertion_N:
+			str.insert(index, 1, 'N');
+			return 1;
 		case deletion:
 			str.erase(index, 1);
 			return -1;
@@ -224,11 +270,15 @@ long modifyString(int edCode, std::string& str, size_t index)
 	}
 }
 
-bool align_single(std::string inputfile, std::string index, std::string outputfile, read_mode_t read_mode) {
+bool align_single(std::string inputfile, std::string index, std::string outputfile, read_mode_t read_mode, bool maintainOrder) {
 
 	std::string temp_file = outputfile + ".tmp";
 
-	std::string callstring = "./readaligner/readaligner -i3 -v ";
+	std::string callstring = "awk -f rnreads.awk " + inputfile + " > " + inputfile + ".tmp";
+
+	system(callstring.c_str());
+
+	callstring = "./readaligner/readaligner -P0 -i3 -v ";
 
 	if(read_mode == read_mode_fasta)
 		callstring += "--fasta ";
@@ -239,10 +289,14 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 		exit(1);
 	}
 
-	system((callstring + " -o " + temp_file + " ./readaligner/" + index + " " + inputfile).c_str());
+	system((callstring + " -o " + temp_file + " " + index + " " + inputfile + ".tmp").c_str());
+
+	callstring = "sort -t 'd' -n +1 -2 " + temp_file + " > " + temp_file + ".sorted";
+	system(callstring.c_str());
+	system(("rm " + temp_file).c_str());
 
 	//Create "insertion alignments" for unmapped reads
-	ifstream in_reads(inputfile.c_str());
+	ifstream in_reads((inputfile + ".tmp").c_str());
 	ofstream out(outputfile.c_str());
 
 	if(!in_reads.is_open() | !out.is_open()) {
@@ -250,7 +304,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 		exit(1);
 	}
 
-	AlignmentReader* alignment_reader = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file);
+	AlignmentReader* alignment_reader = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file+".sorted");
 
 	string id;
 	string pattern;
@@ -298,7 +352,7 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 			for(unsigned i = 1; i < pattern.length(); i++) {
 				c = pattern.at(i);
-				edit_vector.push_back(make_pair((int)i,tolower(c)));
+				edit_vector.push_back(make_pair(maintainOrder ? (int)i : 0,tolower(c)));
 			}
 
 			Alignment new_a(id, strand, length, chromosome, start, edit_vector);
@@ -316,10 +370,12 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 	}
 
+	system(("rm " + inputfile + ".tmp").c_str());
+	system(("rm " + temp_file + ".sorted").c_str());
+
 	in_reads.close();
 	out.close();
 
-	system(("rm " + temp_file).c_str());
 
 	if(number_of_missing > (0.5 * total_number))
 		std::cerr << "Warning: more than half the reads failed to align, compression isn't good." << std::endl;
@@ -328,13 +384,19 @@ bool align_single(std::string inputfile, std::string index, std::string outputfi
 
 }
 
-bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string index, std::string outputfile_1, std::string outputfile_2, read_mode_t read_mode) {
+bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string index, std::string outputfile_1, std::string outputfile_2, read_mode_t read_mode, bool maintainOrder) {
 
 	std::string temp_file_1 = outputfile_1 + ".tmp";
 	std::string temp_file_2 = outputfile_2 + ".tmp";
 
+	std::string callstring = "awk -f rnreads.awk " + inputfile_1 + " > " + inputfile_1 + ".tmp";
+
+	system(callstring.c_str());
+	callstring = "awk -f rnreads.awk " + inputfile_2 + " > " + inputfile_2 + ".tmp";
+	system(callstring.c_str());
+
 	// Ask for max 10 alignments per read, out of those bigger chance to find matching pair
-	std::string callstring = "./readaligner/readaligner -i3 -r10 -v ";
+	callstring = "./readaligner/readaligner -P0 -i3 -r10 -v ";
 
 	if(read_mode == read_mode_fasta)
 		callstring += "--fasta ";
@@ -345,15 +407,15 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 		exit(1);
 	}
 
-	system((callstring + " -o " + temp_file_1 + " ./readaligner/" + index + " " + inputfile_1).c_str());
-	system((callstring + " -o " + temp_file_2 + " ./readaligner/" + index + " " + inputfile_2).c_str());
+	system((callstring + " -o " + temp_file_1 + " " + index + " " + inputfile_1 + ".tmp").c_str());
+	system((callstring + " -o " + temp_file_2 + " " + index + " " + inputfile_2 + ".tmp").c_str());
 
 	//Create "insertion alignments" for unmapped reads
 
-	ifstream in_reads_1(inputfile_1.c_str());
+	ifstream in_reads_1((inputfile_1 + ".tmp").c_str());
 	ofstream out_1(outputfile_1.c_str());
 
-	ifstream in_reads_2(inputfile_2.c_str());
+	ifstream in_reads_2((inputfile_2 + ".tmp").c_str());
 	ofstream out_2(outputfile_2.c_str());
 
 
@@ -362,9 +424,15 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 		exit(1);
 	}
 
+	callstring = "sort -t 'd' -n +1 -2 " + temp_file_1 + " > " + temp_file_1 + ".sorted";
+	system(callstring.c_str());
+	system(("rm " + temp_file_1).c_str());
+	callstring = "sort -t 'd' -n +1 -2 " + temp_file_2 + " > " + temp_file_2 + ".sorted";
+	system(callstring.c_str());
+	system(("rm " + temp_file_2).c_str());
 
-	AlignmentReader* alignment_reader_1 = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file_1);
-	AlignmentReader* alignment_reader_2 = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file_2);
+	AlignmentReader* alignment_reader_1 = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file_1+".sorted");
+	AlignmentReader* alignment_reader_2 = new AlignmentReader(AlignmentReader::input_tabdelimited, temp_file_2+".sorted");
 
 	string id_1;
 	string pattern_1;
@@ -430,7 +498,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 
 			for(unsigned i = 1; i < pattern_1.length(); i++) {
 				c = pattern_1.at(i);
-				edit_vector_1.push_back(make_pair(1,tolower(c)));
+				edit_vector_1.push_back(make_pair(maintainOrder ? 1 : 0,tolower(c)));
 			}
 
 			Alignment new_a_1 = Alignment(id_1, strand, length, chromosome, start, edit_vector_1);
@@ -446,7 +514,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 
 			for(unsigned i = 1; i < pattern_2.length(); i++) {
 				c = pattern_2.at(i);
-				edit_vector_2.push_back(make_pair(1,tolower(c)));
+				edit_vector_2.push_back(make_pair(maintainOrder ? 1 : 0,tolower(c)));
 			}
 
 			Alignment new_a_2 = Alignment(id_2, strand, length, chromosome, start, edit_vector_2);
@@ -520,7 +588,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 
 				for(unsigned i = 1; i < pattern_1.length(); i++) {
 					c = pattern_1.at(i);
-					edit_vector_1.push_back(make_pair(1,tolower(c)));
+					edit_vector_1.push_back(make_pair(maintainOrder ? 1 : 0,tolower(c)));
 				}
 
 				Alignment new_a_1 = Alignment(id_1, strand, length, chromosome, start, edit_vector_1);
@@ -536,7 +604,7 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 
 				for(unsigned i = 1; i < pattern_2.length(); i++) {
 					c = pattern_2.at(i);
-					edit_vector_2.push_back(make_pair(1,tolower(c)));
+					edit_vector_2.push_back(make_pair(maintainOrder ? 1 : 0,tolower(c)));
 				}
 
 				Alignment new_a_2 = Alignment(id_2, strand, length, chromosome, start, edit_vector_2);
@@ -551,11 +619,49 @@ bool align_pair(std::string inputfile_1, std::string inputfile_2, std::string in
 	out_1.close();
 	out_2.close();
 
-	system(("rm " + temp_file_1).c_str());
-	system(("rm " + temp_file_2).c_str());
+	system(("rm " + temp_file_1 + ".sorted").c_str());
+	system(("rm " + temp_file_2 + ".sorted").c_str());
+
+	system(("rm " + inputfile_1 + ".tmp").c_str());
+	system(("rm " + inputfile_2 + ".tmp").c_str());
 
 	if(number_of_missing > (0.5 * total_number))
 		std::cerr << "Warning: more than half the reads failed to align, compression isn't good." << std::endl;
 
 	return true;
+}
+
+long getRead(bit_file_c& in, const std::string& reference, std::string& out, long prevPos, bool decreasePos)
+{
+	long posField = readGammaCode(in);
+	if(!in.good())
+		return -1;
+	if(decreasePos)
+		posField = prevPos - posField;
+	else
+		posField += prevPos;
+	long lengthField = readGammaCode(in);
+	out = reference.substr(posField, lengthField);
+	if(in.GetBit())
+	{
+		complement(out);
+		std::reverse(out.begin(), out.end());
+	}
+	if(posField >= reference.length())
+		std::cerr << posField << " >= " << reference.length() << '\n';
+
+	long edField = readGammaCode(in);
+
+	long lastEditPos = 0;
+	long offset = 0;
+
+
+	for(long i = 0; i < edField;++i)
+	{
+		std::pair<long, int> edOp = readEditOp(in);
+		lastEditPos += edOp.first;
+		offset += modifyString(edOp.second, out, lastEditPos+offset);
+	}
+
+	return posField;
 }

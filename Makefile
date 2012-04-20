@@ -1,5 +1,5 @@
 CC = g++
-CCFLAGS = -Wall -Wextra -ggdb
+CCFLAGS = -Os
 
 
 OBJS = MethodA.o MethodB.o MethodC.o MethodD.o Alignment.o AlignmentReader.o bitfile.o utils.o

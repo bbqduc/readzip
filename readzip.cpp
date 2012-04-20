@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 
 				string alignment_file = input_file + ".tab";
 
-				std::string index = genome_file.substr(0, genome_file.find_first_of('.'));
+				std::string index = genome_file;
 
 				// Call to align
 				if(!(align_single(input_file, index, alignment_file, read_mode))) {
@@ -190,21 +190,29 @@ int main(int argc, char **argv)
 		case packing_mode_b:
 
 			genome_file = string(argv[optind++]); 
-
 			input_file = string(argv[optind++]);
-
 			output_file = string(argv[optind++]);
 
 			if(xc_mode == zip_mode) {
-				if(MethodB::compress(input_file, output_file, genome_file)) {
+				string alignment_file = input_file + ".tab";
+				std::string index = genome_file;
+
+				// Call to align
+				if(!(align_single(input_file, index, alignment_file, read_mode, false))) {
+					std::cerr << "Error! Failure in aligning the reads." << std::endl;
+					exit(1);
+				}
+
+				if(MethodB::compress(alignment_file, output_file, genome_file)) {
 					std::cerr << "Done compressing." << std::endl;
 				}
 				else
 					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+				system(("rm " + alignment_file).c_str());
 			}
 			else {
 				if(MethodB::decompress(input_file, output_file, genome_file)) {
-					std::cerr << "Done compressing." << std::endl;
+					std::cerr << "Done decompressing." << std::endl;
 				}
 				else
 					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
@@ -235,7 +243,7 @@ int main(int argc, char **argv)
 				string alignment_file_1 = input_file_1 + ".tab";
 				string alignment_file_2 = input_file_2 + ".tab";
 
-				std::string index = genome_file.substr(0, genome_file.find_first_of('.'));
+				std::string index = genome_file;
 
 				// Call to align
 				if(!(align_pair(input_file_1, input_file_2, index, alignment_file_1, alignment_file_2, read_mode))) {
@@ -272,11 +280,46 @@ int main(int argc, char **argv)
 
 		case packing_mode_d:
 
+			string genome_file = string(argv[optind++]); 
+
 			if(xc_mode == zip_mode) {
+				string input_file_1 = string(argv[optind++]);
+
+				string input_file_2 = string(argv[optind++]);
+
+				string output_file = string(argv[optind++]);
+
+				string alignment_file_1 = input_file_1 + ".tab";
+				string alignment_file_2 = input_file_2 + ".tab";
+
+				std::string index = genome_file;
+
+				// Call to align
+				if(!(align_pair(input_file_1, input_file_2, index, alignment_file_1, alignment_file_2, read_mode, false))) {
+					std::cerr << "Error! Failure in aligning the reads." << std::endl;
+					exit(1);
+				}
+
+				if(MethodD::compress(alignment_file_1, alignment_file_2, output_file, genome_file)) {
+					std::cerr << "Done compressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the compression!" << std::endl;
+//				system(("rm " + alignment_file_1).c_str());
+//				system(("rm " + alignment_file_2).c_str());
 
 			}
 			else {
+				string input_file = string(argv[optind++]);
 
+				string output_file_1 = string(argv[optind++]);
+				string output_file_2 = string(argv[optind++]);
+
+				if(MethodD::decompress(input_file, output_file_1, output_file_2, genome_file)) {
+					std::cerr << "Done decompressing." << std::endl;
+				}
+				else
+					std::cerr << "Error! Something went wrong with the decompression!" << std::endl;
 			}
 			break;
 

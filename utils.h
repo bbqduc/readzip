@@ -12,7 +12,7 @@
 #include "Alignment.h"
 
 // Fixed length code (with 4 bits) can be used to display these
-enum edit_codes_t {mismatch_A, mismatch_C, mismatch_G, mismatch_T, mismatch_N, insertion_A, insertion_C, insertion_G, insertion_T, deletion};
+enum edit_codes_t {mismatch_A, mismatch_C, mismatch_G, mismatch_T, mismatch_N, insertion_A, insertion_N, insertion_C, insertion_G, insertion_T, deletion};
 enum read_mode_t {read_mode_undef, read_mode_fasta, read_mode_fastq};
 
 /* Writes gamma code using bitfile. */
@@ -45,7 +45,13 @@ int getEditCode(char c);
 long modifyString(int edCode, std::string& str, size_t index);
 
 /* Prepares the reads for compression by aligning them (Single reads) */
-bool align_single(std::string inputfile, std::string genome_file, std::string outputfile, read_mode_t read_mode) ;
+bool align_single(std::string inputfile, std::string genome_file, std::string outputfile, read_mode_t read_mode, bool maintainOrder = true) ;
 
 /* Prepares the reads for compression by aligning them (Paired reads) */
-bool align_pair(std::string input1, std::string input2, std::string genome_file, std::string outputfile_1, std::string outputfile_2, read_mode_t read_mode);
+bool align_pair(std::string input1, std::string input2, std::string genome_file, std::string outputfile_1, std::string outputfile_2, read_mode_t read_mode, bool maintainOrder = true);
+
+
+void writeAlignment(bit_file_c& out, Alignment& a, long prevPos);
+bool startPosPairComp(const std::pair<Alignment, Alignment>& a, const std::pair<Alignment, Alignment>& b);
+void readAllPairAlignments(std::vector<std::pair<Alignment, Alignment> >& alignments, const std::string& infile1, const std::string& infile2);
+long getRead(bit_file_c& in, const std::string& reference, std::string& out, long prevPos=0, bool decreasePos=false);
