@@ -37,3 +37,11 @@ For paired reads with method C:
 And extraction :
 
 ./readzip -cxf r.fasta reads.rzip reads1_uncompressed.fasta reads2_uncompressed.fasta
+
+
+Group contributions :
+	MethodA	- Anna Kuosmanen
+	MethodB - Johannes Ylinen
+	MethodC - Anna Kuosmanen
+	MethodD - Johannes Ylinen
+	utils   - both

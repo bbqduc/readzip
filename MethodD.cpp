@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "MethodD.h"
 
+// @author Johannes Ylinen
+
 bool MethodD::compress(std::string inputfile, std::string inputfile2, std::string outputfile, std::string genomefile)
 {
 	std::vector<std::pair<Alignment, Alignment> > alignments;

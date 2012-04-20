@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "MethodB.h"
 
+// @author Johannes Ylinen
 
 bool MethodB::compress(std::string infile, string outputfile, string genomefile) 
 {
